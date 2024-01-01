@@ -54,10 +54,13 @@ exports.login = async (req, res) => {
             const accessToken = generateToken(user);
 
             // refreshTokens.push(refreshToken);
-            const { password, ...other } = user._doc;
+            // const { password, ...other } = user._doc;
             return res.status(201).json({
                 message: 'Login success',
-                other,
+                username: user.username,
+                email: user.email,
+                phone: user.phone,
+                isAdmin: user.isAdmin,
                 accessToken
             });
         }

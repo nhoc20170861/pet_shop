@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import productAPI from "../api/productAPI";
+import { ShowToastMessage } from "../../utils/ShowToastMessage";
+import { CartContext } from "../../App";
 // thực phẩm thú cưng
 
 function Food() {
@@ -19,8 +21,9 @@ function Food() {
     };
     getProducts();
   }, []);
-  const [cartItems, setCartItems] = useState([]);
+  // const [cartItems, setCartItems] = useState([]);
 
+  const { cartItems, setCartItems } = useContext(CartContext);
   useEffect(() => {
     const storedCartItems = sessionStorage.getItem("cartItems");
     if (storedCartItems) {
@@ -44,7 +47,12 @@ function Food() {
       setCartItems(updatedCartItems);
       sessionStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
     }
-    alert("Thêm vào giỏ hàng thành công");
+    //alert("Thêm vào giỏ hàng thành công");
+    ShowToastMessage({
+      title: "AddProductToCart",
+      message: "Thêm vào giỏ hàng thành công",
+      type: "success",
+    });
   };
 
   return (

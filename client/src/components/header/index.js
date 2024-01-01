@@ -4,9 +4,9 @@ import { FaCartPlus } from "react-icons/fa";
 import { FaPhone } from "react-icons/fa";
 import { FaChevronDown } from "react-icons/fa";
 import CartNotification from "../page/CartNotification";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import Cookies from "js-cookie";
-
+import { CartContext } from "../../App";
 function Header({ onDataTransfer }) {
   // get access token from local storage
   const accessToken = localStorage.getItem("accessToken");
@@ -16,13 +16,15 @@ function Header({ onDataTransfer }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [cartQuantity, setCartQuantity] = useState(0);
-
+  const { cartItems, setCartItems } = useContext(CartContext);
   useEffect(() => {
-    const storedCartItems = sessionStorage.getItem("cartItems");
-    if (storedCartItems) {
-      setCartQuantity(JSON.parse(storedCartItems).length);
-    }
-  }, []);
+    // const storedCartItems = sessionStorage.getItem("cartItems");
+    // if (storedCartItems) {
+    //   setCartQuantity(JSON.parse(storedCartItems).length);
+    // }
+    console.log("change cart");
+    setCartQuantity(cartItems.length);
+  }, [cartItems]);
 
   const searchProduct = async () => {
     const isSearchPage = location.pathname === "/search";

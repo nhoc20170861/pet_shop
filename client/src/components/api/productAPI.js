@@ -55,6 +55,23 @@ const productAPI = {
     const url = `/products/find`;
     return axiosClient.post(url, name);
   },
+  async createPayment({ amount, cartItems }) {
+    const url = "/create_payment_url";
+    return axiosClient.post(url, {
+      amount,
+      cartItems,
+      bankCode: "",
+      language: "vn",
+    });
+  },
+  async handleTransaction(queryParam) {
+    const url = "/vnpay_return?" + queryParam;
+    return axiosClient.post(url);
+  },
+  async handleGetPurchase() {
+    const url = "/get_purchase";
+    return axiosClient.get(url);
+  },
 };
 
 export default productAPI;

@@ -1,17 +1,140 @@
 import { SlClose } from "react-icons/sl";
-import { useEffect, useState, useContext } from "react";
-import Fab from "@mui/material/Fab";
-import ManageHistoryIcon from "@mui/icons-material/ManageHistory";
-import Tooltip from "@mui/material/Tooltip";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
+import Backdrop from "@mui/material/Backdrop";
+import { useSearchParams } from "react-router-dom";
+import Fab from "@mui/material/Fab";
+import CheckIcon from "@mui/icons-material/Check";
+import PaymentIcon from "@mui/icons-material/Payment";
+import Button from "@mui/material/Button";
+import { green, blue } from "@mui/material/colors";
 import Footer from "../footer";
 import Header from "../header";
 import productAPI from "../api/productAPI";
+import ManageHistoryIcon from "@mui/icons-material/ManageHistory";
+import Tooltip from "@mui/material/Tooltip";
 import { CartContext } from "../../App";
-function ViewCart() {
+function CircularProgressWithButton(props) {
   const navigate = useNavigate();
+  const buttonSx = {
+    ...(props.success
+      ? {
+          bgcolor: green[500],
+          "&:hover": {
+            bgcolor: green[700],
+          },
+        }
+      : {
+          bgcolor: blue[500],
+          "&:hover": {
+            bgcolor: blue[700],
+          },
+        }),
+  };
+  const handleButtonClick = () => {
+    if (props.success) {
+      // remove cart items from state
+      props.setCartItems([]);
+      // remove cart items from session storage
+      sessionStorage.removeItem("cartItems");
+      navigate("/purchase");
+    } else {
+      navigate("/cart");
+    }
+  };
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        display: "flex",
+        backgroundColor: "#fff",
+        width: 350,
+        height: 250,
+        borderRadius: 5,
+        justifyContent: "space-around",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: 5,
+      }}
+    >
+      <h2
+        style={{
+          color: "black",
+          fontWeight: "500",
+        }}
+      >
+        {props.loading
+          ? "Thanh toán đang thực hiện..."
+          : props.success
+          ? "Thanh toán thành công"
+          : "Thanh toán bị huỷ bỏ"}
+      </h2>
+      <Box
+        sx={{
+          position: "relative",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Fab aria-label="save" color="primary" sx={buttonSx}>
+          {props.success ? <CheckIcon /> : <PaymentIcon />}
+          {props.loading && (
+            <CircularProgress
+              // variant="determinate"
+              color="secondary"
+              {...props}
+              size={70}
+              sx={{
+                zIndex: 999,
+                top: -8,
+                left: -8,
+                bottom: 0,
+                right: 0,
+                position: "absolute",
+              }}
+            />
+          )}
+        </Fab>
+      </Box>
+      <Box sx={{ m: 1, position: "relative" }}>
+        {!props.loading && (
+          <Button variant="contained" sx={buttonSx} onClick={handleButtonClick}>
+            {props.success ? "Xem đơn hàng" : "Quay lại giỏ hàng"}
+          </Button>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+function ViewCartVnpayReturn() {
+  const [queryParameters] = useSearchParams();
   const { cartItems, setCartItems } = useContext(CartContext);
   const [totalPayment, setTotalPayment] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [success, setSuccess] = useState(false);
+  const timer = React.useRef();
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await productAPI.handleTransaction(
+          queryParameters.toString()
+        );
+        setLoading(false);
+        if (response.RspCode === "00") {
+          setSuccess(true);
+        } else {
+          setSuccess(false);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchData();
+  }, []);
+
   useEffect(() => {
     const totalPayment =
       cartItems.reduce(
@@ -19,48 +142,29 @@ function ViewCart() {
         0
       ) + 30000;
     setTotalPayment(totalPayment);
-  }, [cartItems]);
-  // remove product from cart
-  const removeProduct = (product) => {
-    const updatedCartItems = cartItems.filter(
-      (item) => item._id !== product._id
-    );
-    setCartItems(updatedCartItems);
-    sessionStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
-  };
+    // timer.current = window.setTimeout(() => {
+    //   setSuccess(true);
+    //   setLoading(false);
+    // }, 3000);
 
-  const updateProductQuantify = (event, _id) => {
-    const { value, name } = event.target;
-
-    const updatedCartItems = cartItems.map((item, index) => {
-      if (item["_id"] === _id && name == "product_quantity") {
-        item["quantity"] = value;
-      }
-      return item;
-    });
-    console.log(
-      "🚀 ~ file: ViewCart.js:45 ~ updatedCartItems ~ updatedCartItems:",
-      updatedCartItems
-    );
-    setCartItems(updatedCartItems);
-    sessionStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
-  };
-
-  const handleCreatePayment = async (paymentInfo) => {
-    try {
-      const data = {
-        amount: totalPayment,
-        cartItems: cartItems,
-      };
-      const response = await productAPI.createPayment(data);
-
-      const vnpUrl = response?.vnpUrl;
-      window.location.replace(vnpUrl);
-    } catch (error) {}
-  };
+    return () => {
+      // clearTimeout(timer.current);
+    };
+  }, []);
 
   return (
     <div>
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={true}
+        // onClick={handleClose}
+      >
+        <CircularProgressWithButton
+          success={success}
+          loading={loading}
+          setCartItems={setCartItems}
+        />
+      </Backdrop>
       <Header />
       <div className="flex mb-24">
         <div className="Container mt-[50px] m-auto w-[1245px] px-4">
@@ -73,12 +177,7 @@ function ViewCart() {
             }}
           >
             <h1 className="text-[42px] text-[#222] font-normal">Giỏ hàng</h1>
-            <Fab
-              size="small"
-              color="secondary"
-              aria-label="view"
-              onClick={() => navigate("/purchase")}
-            >
+            <Fab size="small" color="secondary" aria-label="view">
               <Tooltip title="Lịch sử mua hàng" placement="top" arrow>
                 <ManageHistoryIcon />
               </Tooltip>
@@ -105,10 +204,7 @@ function ViewCart() {
                   {cartItems.map((product, index) => (
                     <tr className="InfoProduct border-b border-slate-300 max-md:flex max-md:flex-col max-md:border-0">
                       <td className="RemoveProduct py-5 w-[20px] max-md:w-full max-md:border-b max-md:py-2">
-                        <button
-                          className="RemoveProduct px-7 max-md:float-right max-md:px-2"
-                          onClick={() => removeProduct(product)}
-                        >
+                        <button className="RemoveProduct px-7 max-md:float-right max-md:px-2">
                           <i className="text-[26px] font-thin opacity-25 hover:opacity-90 hover:text-[#3380c4]">
                             <SlClose />
                           </i>
@@ -145,19 +241,8 @@ function ViewCart() {
                           Số lượng:
                         </span>
                         <div className="inline-block">
-                          <span>
-                            <input
-                              className="border w-16 pl-[20px] min-h-[35px] outline-none"
-                              type="number"
-                              id="product_quantity"
-                              name="product_quantity"
-                              value={product.quantity}
-                              min={1}
-                              max={100}
-                              onChange={(event) =>
-                                updateProductQuantify(event, product["_id"])
-                              }
-                            />
+                          <span className="border w-16 pl-[20px] min-h-[35px] outline-none">
+                            {product.quantity}
                           </span>
                         </div>
                       </td>
@@ -222,7 +307,7 @@ function ViewCart() {
                 </table>
                 <div className="w-full flex p-[14px] ">
                   <button
-                    onClick={handleCreatePayment}
+                    // onClick={handleCreatePayment}
                     className="py-2.5 px-10 bg-[#273172] text-center w-full mx-2.5 text-white font-medium hover:opacity-80"
                   >
                     Tiến hành thanh toán
@@ -237,4 +322,5 @@ function ViewCart() {
     </div>
   );
 }
-export default ViewCart;
+
+export default ViewCartVnpayReturn;

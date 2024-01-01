@@ -1,5 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import productAPI from "../api/productAPI";
+import { ShowToastMessage } from "../../utils/ShowToastMessage";
+import { CartContext } from "../../App";
 // sản phẩm vệ sinh
 
 function Hygiene() {
@@ -19,14 +21,15 @@ function Hygiene() {
     };
     getProducts();
   }, []);
-  const [cartItems, setCartItems] = useState([]);
+  // const [cartItems, setCartItems] = useState([]);
 
-  useEffect(() => {
-    const storedCartItems = sessionStorage.getItem("cartItems");
-    if (storedCartItems) {
-      setCartItems(JSON.parse(storedCartItems));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const storedCartItems = sessionStorage.getItem("cartItems");
+  //   if (storedCartItems) {
+  //     setCartItems(JSON.parse(storedCartItems));
+  //   }
+  // }, []);
+  const { cartItems, setCartItems } = useContext(CartContext);
   const addToCartAndStore = (product) => {
     const existingCartItem = cartItems.find((item) => item._id === product._id);
 
@@ -44,7 +47,12 @@ function Hygiene() {
       setCartItems(updatedCartItems);
       sessionStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
     }
-    alert("Thêm vào giỏ hàng thành công");
+    // alert("Thêm vào giỏ hàng thành công");
+    ShowToastMessage({
+      title: "AddProductToCart",
+      message: "Thêm vào giỏ hàng thành công",
+      type: "success",
+    });
   };
   return (
     <div className="flex justify-center mt-8">

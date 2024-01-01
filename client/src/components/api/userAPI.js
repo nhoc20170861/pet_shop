@@ -6,11 +6,14 @@ const userAPI = {
     axiosClient
       .post(url, data)
       .then((res) => {
-        const data = res.other;
+        const data = res;
+
         localStorage.setItem("accessToken", res.accessToken);
+
         if (data.isAdmin === true) {
           navigate("/admin");
         } else {
+          delete data["accessToken"];
           Cookies.set("user", JSON.stringify(data));
           console.log(data);
           navigate("/");
